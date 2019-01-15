@@ -1,16 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:io';
+
+import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
-import 'package:open_file/open_file.dart';
-import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
-import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class GenerateScreen extends StatefulWidget {
   @override
@@ -23,6 +24,7 @@ class GenerateScreenState extends State<GenerateScreen> {
   static const double _topSectionHeight = 50.0;
   final dateFormat = DateFormat("EEEE, MMMM d, yyyy 'at' h:mma");
   DateTime date;
+  double money;
 
   GlobalKey globalKey = new GlobalKey();
   String _dataString = "Hello from this QR";
@@ -109,11 +111,18 @@ class GenerateScreenState extends State<GenerateScreen> {
       child: Column(
         children: <Widget>[
           Padding(
+              padding: const EdgeInsets.only(
+                left: 20.0,
+                right: 10.0,
+              ),
+              child: Text(
+                "\$$money",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 90),
+              )),
+          Padding(
             padding: const EdgeInsets.only(
-              top: _topSectionTopPadding,
               left: 20.0,
               right: 10.0,
-              bottom: _topSectionBottomPadding,
             ),
             child: Container(
               height: _topSectionHeight,
@@ -136,8 +145,12 @@ class GenerateScreenState extends State<GenerateScreen> {
                       child: Text("SUBMIT"),
                       onPressed: () {
                         setState(() {
-                          _dataString = _textController.text + " " + date.toIso8601String();
+                          _dataString = _textController.text +
+                              " " +
+                              date.toIso8601String();
                           _inputErrorText = null;
+                          money ??= 12.5;
+                          money = money + 0.5;
                         });
                       },
                     ),
@@ -155,10 +168,8 @@ class GenerateScreenState extends State<GenerateScreen> {
           ),
           Padding(
               padding: const EdgeInsets.only(
-                top: _topSectionTopPadding,
                 left: 20.0,
                 right: 20.0,
-                bottom: _topSectionBottomPadding,
               ),
               child: DateTimePickerFormField(
                 format: dateFormat,
