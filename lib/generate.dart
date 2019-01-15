@@ -7,15 +7,15 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:open_file/open_file.dart';
 
 class GenerateScreen extends StatefulWidget {
-
   @override
   State<StatefulWidget> createState() => GenerateScreenState();
 }
 
 class GenerateScreenState extends State<GenerateScreen> {
-
   static const double _topSectionTopPadding = 50.0;
   static const double _topSectionBottomPadding = 20.0;
   static const double _topSectionHeight = 50.0;
@@ -23,7 +23,7 @@ class GenerateScreenState extends State<GenerateScreen> {
   GlobalKey globalKey = new GlobalKey();
   String _dataString = "Hello from this QR";
   String _inputErrorText;
-  final TextEditingController _textController =  TextEditingController();
+  final TextEditingController _textController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,8 @@ class GenerateScreenState extends State<GenerateScreen> {
 
   Future<void> _captureAndSharePng() async {
     try {
-      RenderRepaintBoundary boundary = globalKey.currentContext.findRenderObject();
+      RenderRepaintBoundary boundary =
+          globalKey.currentContext.findRenderObject();
       var image = await boundary.toImage();
       ByteData byteData = await image.toByteData(format: ImageByteFormat.png);
       Uint8List pngBytes = byteData.buffer.asUint8List();
@@ -54,17 +55,38 @@ class GenerateScreenState extends State<GenerateScreen> {
 
       final channel = const MethodChannel('channel:me.alfian.share/share');
       channel.invokeMethod('shareFile', 'image.png');
-
-    } catch(e) {
+    } catch (e) {
       print(e.toString());
     }
   }
 
+  createPdf() async {
+    final pdf = new PDFDocument();
+    final page = new PDFPage(pdf, pageFormat: PDFPageFormat.letter);
+    final g = page.getGraphics();
+    final font = new PDFFont(pdf);
+
+    g.setColor(new PDFColor(0.0, 1.0, 1.0));
+    g.drawRect(50.0, 30.0, 100.0, 50.0);
+    g.fillPath();
+
+    g.setColor(new PDFColor(0.3, 0.3, 0.3));
+    g.drawString(font, 12.0, "Hello World!", 5.0 * PDFPageFormat.mm, 300.0);
+
+    var tempDir = await getTemporaryDirectory();
+    String tempPath = tempDir.path;
+
+    var file = new File(tempPath+'/file.pdf');
+    file.writeAsBytesSync(pdf.save());
+    OpenFile.open(file.path);
+  }
+
   _contentWidget() {
-    final bodyHeight = MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom;
-    return  Container(
+    final bodyHeight = MediaQuery.of(context).size.height -
+        MediaQuery.of(context).viewInsets.bottom;
+    return Container(
       color: const Color(0xFFFFFFFF),
-      child:  Column(
+      child: Column(
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.only(
@@ -73,16 +95,16 @@ class GenerateScreenState extends State<GenerateScreen> {
               right: 10.0,
               bottom: _topSectionBottomPadding,
             ),
-            child:  Container(
+            child: Container(
               height: _topSectionHeight,
-              child:  Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Expanded(
-                    child:  TextField(
+                    child: TextField(
                       controller: _textController,
-                      decoration:  InputDecoration(
+                      decoration: InputDecoration(
                         hintText: "Enter a custom message",
                         errorText: _inputErrorText,
                       ),
@@ -90,14 +112,21 @@ class GenerateScreenState extends State<GenerateScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 10.0),
-                    child:  FlatButton(
-                      child:  Text("SUBMIT"),
+                    child: FlatButton(
+                      child: Text("SUBMIT"),
                       onPressed: () {
-                        setState((){
+                        setState(() {
                           _dataString = _textController.text;
                           _inputErrorText = null;
                         });
                       },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10.0),
+                    child: FlatButton(
+                      child: Text("PDF"),
+                      onPressed: createPdf,
                     ),
                   )
                 ],
@@ -105,7 +134,7 @@ class GenerateScreenState extends State<GenerateScreen> {
             ),
           ),
           Expanded(
-            child:  Center(
+            child: Center(
               child: RepaintBoundary(
                 key: globalKey,
                 child: QrImage(
@@ -113,8 +142,9 @@ class GenerateScreenState extends State<GenerateScreen> {
                   size: 0.5 * bodyHeight,
                   onError: (ex) {
                     print("[QR] ERROR - $ex");
-                    setState((){
-                      _inputErrorText = "Error! Maybe your input value is too long?";
+                    setState(() {
+                      _inputErrorText =
+                          "Error! Maybe your input value is too long?";
                     });
                   },
                 ),
