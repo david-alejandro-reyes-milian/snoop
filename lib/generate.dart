@@ -9,6 +9,8 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:open_file/open_file.dart';
+import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:intl/intl.dart';
 
 class GenerateScreen extends StatefulWidget {
   @override
@@ -19,6 +21,8 @@ class GenerateScreenState extends State<GenerateScreen> {
   static const double _topSectionTopPadding = 50.0;
   static const double _topSectionBottomPadding = 20.0;
   static const double _topSectionHeight = 50.0;
+  final dateFormat = DateFormat("EEEE, MMMM d, yyyy 'at' h:mma");
+  DateTime date;
 
   GlobalKey globalKey = new GlobalKey();
   String _dataString = "Hello from this QR";
@@ -66,19 +70,35 @@ class GenerateScreenState extends State<GenerateScreen> {
     final g = page.getGraphics();
     final font = new PDFFont(pdf);
 
+    PDFImage image = await generateQrImage(pdf);
+
+    var h = 20.0 * PDFPageFormat.mm;
+    g.drawImage(image, h, h * 3, 500.0);
+
     g.setColor(new PDFColor(0.0, 1.0, 1.0));
-    g.drawRect(50.0, 30.0, 100.0, 50.0);
+    g.drawRect(h, h * 2, 500.0, 48.0);
     g.fillPath();
 
     g.setColor(new PDFColor(0.3, 0.3, 0.3));
-    g.drawString(font, 12.0, "Hello World!", 5.0 * PDFPageFormat.mm, 300.0);
+    g.drawString(font, 48.0, "Casabe concert ticket!", h, h);
 
     var tempDir = await getTemporaryDirectory();
     String tempPath = tempDir.path;
 
-    var file = new File(tempPath+'/file.pdf');
+    var file = new File(tempPath + '/file.pdf');
     file.writeAsBytesSync(pdf.save());
     OpenFile.open(file.path);
+  }
+
+  Future<PDFImage> generateQrImage(PDFDocument pdf) async {
+    RenderRepaintBoundary boundary =
+        globalKey.currentContext.findRenderObject();
+    var img = await boundary.toImage();
+    ByteData byteData = await img.toByteData(format: ImageByteFormat.rawRgba);
+    Uint8List pngBytes = byteData.buffer.asUint8List();
+    PDFImage image = new PDFImage(pdf,
+        image: pngBytes, width: img.width, height: img.height);
+    return image;
   }
 
   _contentWidget() {
@@ -116,7 +136,7 @@ class GenerateScreenState extends State<GenerateScreen> {
                       child: Text("SUBMIT"),
                       onPressed: () {
                         setState(() {
-                          _dataString = _textController.text;
+                          _dataString = _textController.text + " " + date.toIso8601String();
                           _inputErrorText = null;
                         });
                       },
@@ -133,6 +153,18 @@ class GenerateScreenState extends State<GenerateScreen> {
               ),
             ),
           ),
+          Padding(
+              padding: const EdgeInsets.only(
+                top: _topSectionTopPadding,
+                left: 20.0,
+                right: 20.0,
+                bottom: _topSectionBottomPadding,
+              ),
+              child: DateTimePickerFormField(
+                format: dateFormat,
+                decoration: InputDecoration(labelText: 'Date'),
+                onChanged: (dt) => setState(() => date = dt),
+              )),
           Expanded(
             child: Center(
               child: RepaintBoundary(
