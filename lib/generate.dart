@@ -133,26 +133,18 @@ class GenerateScreenState extends State<GenerateScreen> {
                   Expanded(
                     child: TextField(
                       controller: _textController,
+                      onChanged: (text) => setState(() {
+                            _dataString = _textController.text +
+                                " " +
+                                date.toIso8601String();
+                            _inputErrorText = null;
+                            money ??= 12.5;
+                            money = money + 0.5;
+                          }),
                       decoration: InputDecoration(
                         hintText: "Enter a custom message",
                         errorText: _inputErrorText,
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10.0),
-                    child: FlatButton(
-                      child: Text("SUBMIT"),
-                      onPressed: () {
-                        setState(() {
-                          _dataString = _textController.text +
-                              " " +
-                              date.toIso8601String();
-                          _inputErrorText = null;
-                          money ??= 12.5;
-                          money = money + 0.5;
-                        });
-                      },
                     ),
                   ),
                   Padding(
@@ -174,7 +166,12 @@ class GenerateScreenState extends State<GenerateScreen> {
               child: DateTimePickerFormField(
                 format: dateFormat,
                 decoration: InputDecoration(labelText: 'Date'),
-                onChanged: (dt) => setState(() => date = dt),
+                onChanged: (dt) => setState(() {
+                      date = dt;
+                      _dataString =
+                          _textController.text + " " + date.toIso8601String();
+                      _inputErrorText = null;
+                    }),
               )),
           Expanded(
             child: Center(
