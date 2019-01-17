@@ -12,15 +12,33 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class GenerateScreen extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => GenerateScreenState();
 }
 
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+
 class GenerateScreenState extends State<GenerateScreen> {
-  static const double _topSectionTopPadding = 50.0;
-  static const double _topSectionBottomPadding = 20.0;
   static const double _topSectionHeight = 50.0;
   final dateFormat = DateFormat("EEEE, MMMM d, yyyy 'at' h:mma");
   DateTime date;
@@ -47,6 +65,19 @@ class GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  Future<Post> fetchPost() async {
+    final response =
+        await http.get('https://jsonplaceholder.typicode.com/posts/1');
+
+    if (response.statusCode == 200) {
+      // If server returns ans OK response, parse the JSON
+      return Post.fromJson(json.decode(response.body));
+    } else {
+      // If that response was not OK, throw an error.
+      throw Exception('Failed to load post');
+    }
+  }
+
   Future<void> _captureAndSharePng() async {
     try {
       RenderRepaintBoundary boundary =
@@ -67,6 +98,7 @@ class GenerateScreenState extends State<GenerateScreen> {
   }
 
   createPdf() async {
+
     final pdf = new PDFDocument();
     final page = new PDFPage(pdf, pageFormat: PDFPageFormat.letter);
     final g = page.getGraphics();
