@@ -15,6 +15,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:query_params/query_params.dart';
+import 'package:snoop/scan.dart';
 
 class GenerateScreen extends StatefulWidget {
   @override
@@ -196,6 +197,18 @@ class GenerateScreenState extends State<GenerateScreen> {
                         hintText: "Enter a custom message",
                         errorText: _inputErrorText,
                       ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10.0),
+                    child: FlatButton(
+                      child: Text("SCAN"),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ScanScreen()),
+                        );
+                      },
                     ),
                   ),
                   Padding(
