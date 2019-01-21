@@ -14,6 +14,7 @@ import 'package:pdf/pdf.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:query_params/query_params.dart';
 
 class GenerateScreen extends StatefulWidget {
   @override
@@ -78,6 +79,25 @@ class GenerateScreenState extends State<GenerateScreen> {
     }
   }
 
+  Future<Post> confirmTicket() async {
+    URLQueryParams params = new URLQueryParams();
+    params.append('date', date.millisecondsSinceEpoch);
+    params.append('sellerId', "sellerID");
+    params.append('concertId', "concertID");
+
+    var server =
+        'https://3yp9bwydxe.execute-api.eu-central-1.amazonaws.com/default';
+    final response = await http.get("$server/ticket?$params");
+
+    if (response.statusCode == 200) {
+      // If server returns ans OK response, parse the JSON
+      return Post.fromJson(json.decode(response.body));
+    } else {
+      // If that response was not OK, throw an error.
+      throw Exception('Failed to load post');
+    }
+  }
+
   Future<void> _captureAndSharePng() async {
     try {
       RenderRepaintBoundary boundary =
@@ -98,7 +118,6 @@ class GenerateScreenState extends State<GenerateScreen> {
   }
 
   createPdf() async {
-
     final pdf = new PDFDocument();
     final page = new PDFPage(pdf, pageFormat: PDFPageFormat.letter);
     final g = page.getGraphics();
@@ -183,7 +202,10 @@ class GenerateScreenState extends State<GenerateScreen> {
                     padding: const EdgeInsets.only(left: 10.0),
                     child: FlatButton(
                       child: Text("PDF"),
-                      onPressed: createPdf,
+                      onPressed: () {
+                        confirmTicket();
+                        createPdf();
+                      },
                     ),
                   )
                 ],
